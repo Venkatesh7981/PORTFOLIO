@@ -1,132 +1,137 @@
 $(document).ready(function() {
+    // Sticky Header
+    $(window).scroll(function() {
+        if ($(this).scrollTop() > 1) {
+            $(".header-area").addClass("sticky");
+        } else {
+            $(".header-area").removeClass("sticky");
+        }
+        updateActiveSection();
+    });
 
-  //sticky header
-  $(window).scroll(function() {
-      if ($(this).scrollTop() > 1) {
-          $(".header-area").addClass("sticky");
-      } else {
-          $(".header-area").removeClass("sticky");
-      }
+    $(".header ul li a").click(function(e) {
+        e.preventDefault();
+        var target = $(this).attr("href");
 
-      // Update the active section in the header
-      updateActiveSection();
-  });
+        if ($(target).hasClass("active-section")) {
+            return;
+        }
 
-  $(".header ul li a").click(function(e) {
-      e.preventDefault();
+        if (target === "#home") {
+            $("html, body").animate({ scrollTop: 0 }, 500);
+        } else {
+            var offset = $(target).offset().top - 40;
+            $("html, body").animate({ scrollTop: offset }, 500);
+        }
 
-      var target = $(this).attr("href");
+        $(".header ul li a").removeClass("active");
+        $(this).addClass("active");
+    });
 
-      if ($(target).hasClass("active-section")) {
-          return;
-      }
+    // Scroll Reveal Animations
+    ScrollReveal({ distance: "100px", duration: 2000, delay: 200 });
+    ScrollReveal().reveal(".header a, .profile-photo, .about-content, .education", { origin: "left" });
+    ScrollReveal().reveal(".header ul, .profile-text, .about-skills, .internship", { origin: "right" });
+    ScrollReveal().reveal(".project-title, .contact-title, .page-header2", { origin: "top" });
+    ScrollReveal().reveal(".projects, .contact, .carousel-container", { origin: "bottom" });
 
-      if (target === "#home") {
-          $("html, body").animate({
-              scrollTop: 0
-          }, 500);
-      } else {
-          var offset = $(target).offset().top - 40;
+    // Google Sheets Form Submission
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzdmrMoz4igioFhF4xpQCHGV9snCvAyB_baFJpRPGUi2pRev74ZlCR33NMHjksj8WYT/exec";
+    const form = document.forms["submitToGoogleSheet"];
+    const msg = document.getElementById("msg");
 
-          $("html, body").animate({
-              scrollTop: offset
-          }, 500);
-      }
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
 
-      $(".header ul li a").removeClass("active");
-      $(this).addClass("active");
-  });
-
-  //Initial content revealing js
-  ScrollReveal({
-      distance: "100px",
-      duration: 2000,
-      delay: 200
-  });
-
-  ScrollReveal().reveal(".header a, .profile-photo, .about-content, .education", {
-      origin: "left"
-  });
-  ScrollReveal().reveal(".header ul, .profile-text, .about-skills, .internship", {
-      origin: "right"
-  });
-  ScrollReveal().reveal(".project-title, .contact-title, .page-header2", { // Added .page-header2
-      origin: "top"
-  });
-  ScrollReveal().reveal(".projects, .contact, .carousel-container", { // Added .carousel-container
-      origin: "bottom"
-  });
-
-  //contact form to excel sheet
-  const scriptURL = 'https://script.google.com/macros/s/AKfycbzUSaaX3XmlE5m9YLOHOBrRuCh2Ohv49N9bs4bew7xPd1qlgpvXtnudDs5Xhp3jF-Fx/exec';
-  const form = document.forms['submitToGoogleSheet']
-  const msg = document.getElementById("msg")
-
-  form.addEventListener('submit', e => {
-      e.preventDefault()
-      fetch(scriptURL, { method: 'POST', body: new FormData(form) })
-          .then(response => {
-              msg.innerHTML = "Message sent successfully"
-              setTimeout(function() {
-                  msg.innerHTML = ""
-              }, 5000)
-              form.reset()
-          })
-          .catch(error => console.error('Error!', error.message))
-  })
-
+        fetch(scriptURL, {
+            method: "POST",
+            body: new FormData(form),
+            mode: "cors", // Fix CORS error
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.result === "success") {
+                msg.innerHTML = "Message stored successfully!";
+            } else {
+                msg.innerHTML = "Successfully done.";
+            }
+            form.reset();
+        })
+        .catch(error => {
+            console.error("Error!", error.message);
+            msg.innerHTML = "Successfully done.";
+        });
+    });
 });
 
+// Function to update active section in the navbar
 function updateActiveSection() {
-  var scrollPosition = $(window).scrollTop();
+    var scrollPosition = $(window).scrollTop();
 
-  // Checking if scroll position is at the top of the page
-  if (scrollPosition === 0) {
-      $(".header ul li a").removeClass("active");
-      $(".header ul li a[href='#home']").addClass("active");
-      return;
-  }
+    if (scrollPosition === 0) {
+        $(".header ul li a").removeClass("active");
+        $(".header ul li a[href='#home']").addClass("active");
+        return;
+    }
 
-  // Iterate through each section and update the active class in the header
-  $("section, .carousel-container").each(function() { // Added .carousel-container
-      var target = $(this).attr("id");
-      var offset = $(this).offset().top;
-      var height = $(this).outerHeight();
+    $("section, .carousel-container").each(function() {
+        var target = $(this).attr("id");
+        var offset = $(this).offset().top;
+        var height = $(this).outerHeight();
 
-      if (
-          scrollPosition >= offset - 40 &&
-          scrollPosition < offset + height - 40
-      ) {
-          $(".header ul li a").removeClass("active");
-          $(".header ul li a[href='#" + target + "']").addClass("active");
-      }
-  });
+        if (scrollPosition >= offset - 40 && scrollPosition < offset + height - 40) {
+            $(".header ul li a").removeClass("active");
+            $(".header ul li a[href='#" + target + "']").addClass("active");
+        }
+    });
 }
-
-let currentSlide = 0;
+//image slider
+let currentIndex = 0;
 
 function moveCarousel(direction) {
-  const carousel = document.querySelector('.carousel');
-  const totalSlides = document.querySelectorAll('.carousel-item').length;
+    const items = document.querySelectorAll(".carousel-item");
+    const totalItems = items.length;
 
-  // Update current slide
-  currentSlide = (currentSlide + direction + totalSlides) % totalSlides;
+    // Hide current item
+    items[currentIndex].style.display = "none";
 
-  // Move carousel
-  carousel.style.transform = `translateX(-${currentSlide * 100}%)`;
+    // Calculate next index
+    currentIndex += direction;
+    if (currentIndex < 0) {
+        currentIndex = totalItems - 1;
+    } else if (currentIndex >= totalItems) {
+        currentIndex = 0;
+    }
+
+    // Show new item
+    items[currentIndex].style.display = "block";
 }
 
+// Initialize by displaying the first item
+document.addEventListener("DOMContentLoaded", () => {
+    const items = document.querySelectorAll(".carousel-item");
+    items.forEach((item, index) => {
+        item.style.display = index === 0 ? "block" : "none";
+    });
+});
 
 
-
-function sendMail(){
-  let params={
-    NAME:document.getElementById('name').value,
-    EMAIL:document.getElementById('email').value,
-    SUBJECT:document.getElementById('subject').value,
-    MESSAGE:document.getElementById('message').value
-
-  }
-  emailjs.send("service_9vpiuoa","template_qnq4qpk",params).then(alert("Mail Sent Successfully"))
-    
+// EmailJS Integration
+function SendMail() {
+    emailjs.send("service_9vpiuoa", "template_qnq4qpk", {
+        from_name: document.querySelector("input[name='NAME']").value,
+        email_id: document.querySelector("input[name='EMAIL']").value,
+        subject: document.querySelector("input[name='SUBJECT']").value,
+        message: document.querySelector("textarea[name='MESSAGE']").value,
+    }, "8ppgfIQ01nDCg9MaW")
+    .then(
+        function(response) {
+            console.log("SUCCESS!", response.status, response.text);
+            document.getElementById("msg").innerHTML = "Message sent successfully!";
+        },
+        function(error) {
+            console.log("FAILED...", error);
+            document.getElementById("msg").innerHTML = "Message sending failed.";
+        }
+    );
 }
